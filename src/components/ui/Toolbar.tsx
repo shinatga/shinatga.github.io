@@ -14,6 +14,8 @@ import {
   Redo2,
   Save,
   FolderOpen,
+  Grid3x3,
+  Ruler,
 } from "lucide-react";
 import { useGarmentStore } from "../../store/useGarmentStore";
 import { useDesignStore } from "../../store/useDesignStore";
@@ -25,6 +27,9 @@ import type { ActivePanel, ViewSide } from "../../store/useUIStore";
 
 const garmentOptions: { type: GarmentType; label: string }[] = [
   { type: "tshirt", label: "T-Shirt" },
+  { type: "longsleeve", label: "Long Sleeve" },
+  { type: "tanktop", label: "Tank Top" },
+  { type: "polo", label: "Polo" },
   { type: "hoodie", label: "Hoodie" },
 ];
 
@@ -58,6 +63,11 @@ export default function Toolbar({ onExport }: ToolbarProps) {
   const setViewSide = useUIStore((s) => s.setViewSide);
   const activePanel = useUIStore((s) => s.activePanel);
   const togglePanel = useUIStore((s) => s.togglePanel);
+
+  const showPrintGuide = useUIStore((s) => s.showPrintGuide);
+  const togglePrintGuide = useUIStore((s) => s.togglePrintGuide);
+  const showSizeGuide = useUIStore((s) => s.showSizeGuide);
+  const toggleSizeGuide = useUIStore((s) => s.toggleSizeGuide);
 
   const undo = useDesignStore((s) => s.undo);
   const redo = useDesignStore((s) => s.redo);
@@ -177,6 +187,34 @@ export default function Toolbar({ onExport }: ToolbarProps) {
             {label}
           </button>
         ))}
+      </div>
+
+      {/* Guides */}
+      <div className="flex gap-1 rounded-lg bg-[#1a1a1a]/90 backdrop-blur-sm p-1 border border-[#2a2a2a]">
+        <button
+          onClick={togglePrintGuide}
+          title="Print Area Guide"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            showPrintGuide
+              ? "bg-cyan-500 text-white"
+              : "text-gray-400 hover:text-white hover:bg-white/10"
+          }`}
+        >
+          <Grid3x3 size={14} />
+          Print
+        </button>
+        <button
+          onClick={toggleSizeGuide}
+          title="Size Guide"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+            showSizeGuide
+              ? "bg-cyan-500 text-white"
+              : "text-gray-400 hover:text-white hover:bg-white/10"
+          }`}
+        >
+          <Ruler size={14} />
+          Size
+        </button>
       </div>
 
       {/* Undo/Redo + Save/Load */}
