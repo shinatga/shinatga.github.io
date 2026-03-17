@@ -43,7 +43,7 @@ export default function Scene({ onRendererReady, postProcessingEnabled = true }:
       <Suspense fallback={null}>
         <GarmentModel onMeshReady={setMesh} />
         <Decals mesh={mesh} />
-        <Environment preset="studio" />
+        <Environment files="/hdri/studio.hdr" />
         <ContactShadows
           position={[0, -0.5, 0]}
           opacity={0.4}

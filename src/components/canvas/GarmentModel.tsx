@@ -1,8 +1,9 @@
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useGarmentStore } from "../../store/useGarmentStore";
 import { GARMENT_CONFIGS } from "../../types/garment";
-import { getFabricTextures, FABRIC_CATALOG } from "../../lib/fabric-textures";
+import { loadFabricTextures, FABRIC_CATALOG } from "../../lib/fabric-textures";
+import type { FabricTextureSet } from "../../lib/fabric-textures";
 import { MeshStandardMaterial, Vector2 } from "three";
 import type { Group, Mesh } from "three";
 
@@ -18,15 +19,25 @@ export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
   const config = GARMENT_CONFIGS[garmentType];
   const fabricInfo = FABRIC_CATALOG[fabricType];
 
-  const { scene } = useGLTF(config.modelPath);
+  const [textures, setTextures] = useState<FabricTextureSet | null>(null);
 
-  // Clone scene to avoid mutating the useGLTF cache
+  const { scene } = useGLTF(config.modelPath);
   const clonedScene = useMemo(() => scene.clone(true), [scene]);
 
+  // Load textures async
   useEffect(() => {
-    const clonedMaterials: MeshStandardMaterial[] = [];
-    const fabric = getFabricTextures(fabricType);
+    let cancelled = false;
+    loadFabricTextures(fabricType).then((set) => {
+      if (!cancelled) setTextures(set);
+    });
+    return () => { cancelled = true; };
+  }, [fabricType]);
 
+  // Apply materials when textures or other deps change
+  useEffect(() => {
+    if (!textures) return;
+
+    const clonedMaterials: MeshStandardMaterial[] = [];
     let namedMesh: Mesh | null = null;
     let firstMesh: Mesh | null = null;
 
@@ -38,11 +49,10 @@ export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
           ? mesh.material.clone()
           : new MeshStandardMaterial();
 
-        // Apply garment color
         clonedMat.color.set(garmentColor);
 
-        // Apply PBR fabric textures
-        const normalClone = fabric.normalMap.clone();
+        // Clone textures to avoid cache pollution
+        const normalClone = textures.normalMap.clone();
         normalClone.needsUpdate = true;
         clonedMat.normalMap = normalClone;
         clonedMat.normalScale = new Vector2(
@@ -50,7 +60,7 @@ export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
           fabricInfo.normalScale
         );
 
-        const roughnessClone = fabric.roughnessMap.clone();
+        const roughnessClone = textures.roughnessMap.clone();
         roughnessClone.needsUpdate = true;
         clonedMat.roughnessMap = roughnessClone;
         clonedMat.roughness = fabricInfo.roughness;
@@ -79,7 +89,7 @@ export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
         mat.dispose();
       }
     };
-  }, [clonedScene, garmentColor, garmentType, fabricType, fabricInfo, onMeshReady, config]);
+  }, [clonedScene, garmentColor, garmentType, fabricType, fabricInfo, textures, onMeshReady, config]);
 
   return (
     <group ref={groupRef}>
