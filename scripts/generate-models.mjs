@@ -1,11 +1,23 @@
 /**
- * Generates T-shirt and Hoodie GLB models with realistic garment silhouettes.
+ * Generates T-shirt and Hoodie GLB models with improved garment silhouettes.
  * Uses @gltf-transform/core for Node.js-compatible GLB creation.
  *
- * The torso is shaped as a flattened body form (wide, shallow depth)
- * with natural garment curves: shoulder taper, slight waist, hem flare.
+ * Improvements over v1:
+ * - Higher resolution profiles (more cross-section rows for smoother curves)
+ * - More ring segments for rounder shapes
+ * - Subtle fabric drape simulation via noise perturbation
+ * - Better UV mapping for texture tiling
+ * - Realistic shoulder slope and armhole transitions
  */
 import { Document, NodeIO } from "@gltf-transform/core";
+
+function seededRandom(seed) {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s / 2147483647) - 0.5; // range: -0.5 to 0.5
+  };
+}
 
 // ─── T-Shirt ────────────────────────────────────────────────
 
@@ -15,54 +27,64 @@ function createTshirtDocument() {
   const scene = doc.createScene("TshirtScene");
 
   const body = createGarmentBody(doc, buffer, {
-    name: "Body",
-    // Cross-section profile from bottom (hem) to top (shoulders)
-    // Each row: [y, halfWidth, halfDepth]
+    name: "T_Shirt_male",
     profile: [
-      [-0.26, 0.19, 0.10],  // hem - slightly wider
-      [-0.20, 0.185, 0.095],
-      [-0.12, 0.175, 0.09],  // waist - slight taper
-      [-0.04, 0.175, 0.09],
-      [0.04,  0.18,  0.09],  // chest
-      [0.12,  0.185, 0.09],  // upper chest
-      [0.18,  0.20,  0.085], // shoulder area widens
-      [0.24,  0.21,  0.08],  // shoulders
-      [0.26,  0.18,  0.07],  // top shoulder slope
+      // [y, halfWidth, halfDepth] — bottom to top
+      [-0.28, 0.195, 0.105],  // hem edge - slight flare
+      [-0.26, 0.19,  0.10],
+      [-0.22, 0.185, 0.098],
+      [-0.18, 0.18,  0.095],  // lower torso
+      [-0.14, 0.175, 0.092],
+      [-0.10, 0.172, 0.09],   // waist taper
+      [-0.06, 0.173, 0.09],
+      [-0.02, 0.175, 0.09],
+      [0.02,  0.178, 0.091],  // lower chest
+      [0.06,  0.182, 0.092],  // chest
+      [0.10,  0.186, 0.091],
+      [0.14,  0.19,  0.09],   // upper chest
+      [0.17,  0.198, 0.088],  // shoulder transition
+      [0.20,  0.208, 0.085],  // shoulder area widens
+      [0.23,  0.215, 0.082],  // shoulders
+      [0.25,  0.21,  0.078],  // shoulder slope starts
+      [0.27,  0.19,  0.072],  // neck transition
+      [0.28,  0.16,  0.065],  // top
     ],
-    ringSegments: 32,
-    flattenFactor: 0.6, // how flat the front/back are (0=round, 1=flat)
+    ringSegments: 48,
+    flattenFactor: 0.55,
+    drapeNoise: 0.003,
+    drapeSeed: 42,
   });
 
-  const leftSleeve = createShortSleeve(doc, buffer, {
+  const leftSleeve = createSleeve(doc, buffer, {
     name: "LeftSleeve",
-    shoulderX: -0.21,
+    shoulderX: -0.215,
     shoulderY: 0.20,
-    length: 0.15,
-    radiusTop: 0.065,
-    radiusBottom: 0.07,
-    angle: 0.55, // angle down from horizontal
-    flattenFactor: 0.3,
-  });
-
-  const rightSleeve = createShortSleeve(doc, buffer, {
-    name: "RightSleeve",
-    shoulderX: 0.21,
-    shoulderY: 0.20,
-    length: 0.15,
-    radiusTop: 0.065,
-    radiusBottom: 0.07,
+    length: 0.16,
+    radiusTop: 0.068,
+    radiusBottom: 0.072,
     angle: 0.55,
     flattenFactor: 0.3,
-  });
+  }, 8);
+
+  const rightSleeve = createSleeve(doc, buffer, {
+    name: "RightSleeve",
+    shoulderX: 0.215,
+    shoulderY: 0.20,
+    length: 0.16,
+    radiusTop: 0.068,
+    radiusBottom: 0.072,
+    angle: 0.55,
+    flattenFactor: 0.3,
+  }, 8);
 
   const collar = createCrewNeck(doc, buffer, {
     name: "Collar",
-    radiusX: 0.065,
-    radiusZ: 0.045,
-    thickness: 0.014,
-    height: 0.02,
-    offsetY: 0.265,
-    segments: 32,
+    radiusX: 0.07,
+    radiusZ: 0.048,
+    thickness: 0.012,
+    height: 0.022,
+    offsetY: 0.275,
+    segments: 48,
   });
 
   const mat = doc.createMaterial("GarmentMaterial")
@@ -75,7 +97,7 @@ function createTshirtDocument() {
     mesh.listPrimitives().forEach(p => p.setMaterial(mat))
   );
 
-  const rootNode = doc.createNode("Body").setMesh(body);
+  const rootNode = doc.createNode("T_Shirt_male").setMesh(body);
   rootNode.addChild(doc.createNode("LeftSleeve").setMesh(leftSleeve));
   rootNode.addChild(doc.createNode("RightSleeve").setMesh(rightSleeve));
   rootNode.addChild(doc.createNode("Collar").setMesh(collar));
@@ -92,62 +114,72 @@ function createHoodieDocument() {
   const scene = doc.createScene("HoodieScene");
 
   const body = createGarmentBody(doc, buffer, {
-    name: "Body",
+    name: "Object_2",
     profile: [
-      [-0.28, 0.21, 0.12],   // hem
-      [-0.22, 0.205, 0.115],
-      [-0.14, 0.195, 0.11],  // waist
-      [-0.06, 0.195, 0.11],
-      [0.02,  0.20,  0.11],  // chest
-      [0.10,  0.205, 0.11],  // upper chest
-      [0.16,  0.215, 0.105], // shoulder area
-      [0.22,  0.225, 0.10],  // shoulders - hoodie is boxier
-      [0.26,  0.20,  0.09],  // top shoulder
+      [-0.30, 0.215, 0.125],  // hem - ribbed band
+      [-0.28, 0.21,  0.12],
+      [-0.24, 0.205, 0.118],
+      [-0.20, 0.20,  0.115],
+      [-0.16, 0.198, 0.112],
+      [-0.12, 0.195, 0.11],   // waist
+      [-0.08, 0.195, 0.11],
+      [-0.04, 0.197, 0.11],
+      [0.00,  0.20,  0.112],  // lower chest
+      [0.04,  0.203, 0.112],  // chest
+      [0.08,  0.207, 0.111],
+      [0.12,  0.212, 0.11],   // upper chest
+      [0.16,  0.22,  0.108],  // shoulder area - hoodie is boxier
+      [0.20,  0.228, 0.105],  // shoulders
+      [0.23,  0.23,  0.10],   // shoulder peak
+      [0.26,  0.215, 0.095],  // neck transition
+      [0.28,  0.19,  0.088],  // top
     ],
-    ringSegments: 32,
-    flattenFactor: 0.55,
+    ringSegments: 48,
+    flattenFactor: 0.5,
+    drapeNoise: 0.004,
+    drapeSeed: 77,
   });
 
-  const leftSleeve = createLongSleeve(doc, buffer, {
+  const leftSleeve = createSleeve(doc, buffer, {
     name: "LeftSleeve",
-    shoulderX: -0.225,
+    shoulderX: -0.23,
     shoulderY: 0.19,
-    length: 0.28,
-    radiusTop: 0.07,
+    length: 0.30,
+    radiusTop: 0.072,
     radiusBottom: 0.055,
-    angle: 0.50,
+    angle: 0.48,
     flattenFactor: 0.25,
-  });
+  }, 12);
 
-  const rightSleeve = createLongSleeve(doc, buffer, {
+  const rightSleeve = createSleeve(doc, buffer, {
     name: "RightSleeve",
-    shoulderX: 0.225,
+    shoulderX: 0.23,
     shoulderY: 0.19,
-    length: 0.28,
-    radiusTop: 0.07,
+    length: 0.30,
+    radiusTop: 0.072,
     radiusBottom: 0.055,
-    angle: 0.50,
+    angle: 0.48,
     flattenFactor: 0.25,
-  });
+  }, 12);
 
   const hood = createHoodShape(doc, buffer, {
     name: "Hood",
-    width: 0.19,
-    height: 0.18,
-    depth: 0.16,
-    offsetY: 0.27,
+    width: 0.20,
+    height: 0.19,
+    depth: 0.17,
+    offsetY: 0.28,
     offsetZ: -0.05,
-    segments: 14,
+    segments: 18,
   });
 
   const pocket = createKangarooPocket(doc, buffer, {
     name: "Pocket",
-    width: 0.22,
-    height: 0.09,
-    depth: 0.006,
+    width: 0.23,
+    height: 0.10,
+    depth: 0.007,
     offsetY: -0.08,
-    offsetZ: 0.12,
-    cornerRadius: 0.02,
+    offsetZ: 0.125,
+    cornerRadius: 0.025,
   });
 
   const mat = doc.createMaterial("GarmentMaterial")
@@ -160,7 +192,7 @@ function createHoodieDocument() {
     mesh.listPrimitives().forEach(p => p.setMaterial(mat))
   );
 
-  const rootNode = doc.createNode("Body").setMesh(body);
+  const rootNode = doc.createNode("Object_2").setMesh(body);
   rootNode.addChild(doc.createNode("LeftSleeve").setMesh(leftSleeve));
   rootNode.addChild(doc.createNode("RightSleeve").setMesh(rightSleeve));
   rootNode.addChild(doc.createNode("Hood").setMesh(hood));
@@ -322,7 +354,7 @@ function createPoloDocument() {
     flattenFactor: 0.6,
   });
 
-  const leftSleeve = createShortSleeve(doc, buffer, {
+  const leftSleeve = createSleeve(doc, buffer, {
     name: "LeftSleeve",
     shoulderX: -0.21,
     shoulderY: 0.20,
@@ -331,9 +363,9 @@ function createPoloDocument() {
     radiusBottom: 0.07,
     angle: 0.55,
     flattenFactor: 0.3,
-  });
+  }, 8);
 
-  const rightSleeve = createShortSleeve(doc, buffer, {
+  const rightSleeve = createSleeve(doc, buffer, {
     name: "RightSleeve",
     shoulderX: 0.21,
     shoulderY: 0.20,
@@ -342,7 +374,7 @@ function createPoloDocument() {
     radiusBottom: 0.07,
     angle: 0.55,
     flattenFactor: 0.3,
-  });
+  }, 8);
 
   const collar = createPoloCollar(doc, buffer, {
     name: "Collar",
@@ -377,17 +409,13 @@ function createPoloDocument() {
 
 // ─── Garment Body ───────────────────────────────────────────
 
-/**
- * Creates a garment body from a vertical profile of cross-sections.
- * Each cross-section is a flattened oval - wider than deep, with
- * flat front/back panels to mimic how fabric drapes on a body form.
- */
 function createGarmentBody(doc, buffer, opts) {
-  const { name, profile, ringSegments, flattenFactor } = opts;
+  const { name, profile, ringSegments, flattenFactor, drapeNoise = 0, drapeSeed = 0 } = opts;
   const positions = [];
   const normals = [];
   const uvs = [];
   const indices = [];
+  const rand = seededRandom(drapeSeed);
 
   const rows = profile.length;
 
@@ -399,21 +427,24 @@ function createGarmentBody(doc, buffer, opts) {
       const u = col / ringSegments;
       const angle = u * Math.PI * 2;
 
-      // Base ellipse
       let x = Math.cos(angle) * halfW;
       let z = Math.sin(angle) * halfD;
 
       // Flatten front and back panels
-      // When |cos(angle)| is small (sides), keep round
-      // When |cos(angle)| is large (front/back), flatten z
       const cosAbs = Math.abs(Math.cos(angle));
-      const flatBlend = Math.pow(1 - cosAbs, 2); // 1 at sides, 0 at front/back
+      const flatBlend = Math.pow(1 - cosAbs, 2);
       const depthScale = 1 - flattenFactor * (1 - flatBlend);
       z *= depthScale;
 
+      // Subtle drape noise for fabric feel
+      if (drapeNoise > 0) {
+        const noise = rand() * drapeNoise;
+        x += noise;
+        z += rand() * drapeNoise * 0.5;
+      }
+
       positions.push(x, y, z);
 
-      // Compute normal (approximate outward)
       const nx = Math.cos(angle) / halfW;
       const nz = Math.sin(angle) / (halfD * depthScale);
       const len = Math.sqrt(nx * nx + nz * nz) || 1;
@@ -423,7 +454,6 @@ function createGarmentBody(doc, buffer, opts) {
     }
   }
 
-  // Quads
   const ringVerts = ringSegments + 1;
   for (let row = 0; row < rows - 1; row++) {
     for (let col = 0; col < ringSegments; col++) {
@@ -435,9 +465,7 @@ function createGarmentBody(doc, buffer, opts) {
     }
   }
 
-  // Bottom cap (hem)
   addFlatCap(positions, normals, uvs, indices, profile[0], ringSegments, -1, flattenFactor);
-  // Top cap (shoulders) - usually hidden by collar/sleeves
   addFlatCap(positions, normals, uvs, indices, profile[rows - 1], ringSegments, 1, flattenFactor);
 
   return buildMesh(doc, buffer, name, positions, normals, uvs, indices);
@@ -447,7 +475,6 @@ function addFlatCap(positions, normals, uvs, indices, profileRow, ringSegments, 
   const [y, halfW, halfD] = profileRow;
   const baseIdx = positions.length / 3;
 
-  // Center
   positions.push(0, y, 0);
   normals.push(0, ny, 0);
   uvs.push(0.5, 0.5);
@@ -479,13 +506,13 @@ function addFlatCap(positions, normals, uvs, indices, profileRow, ringSegments, 
 
 function createSleeve(doc, buffer, opts, segments) {
   const { name, shoulderX, shoulderY, length, radiusTop, radiusBottom, angle, flattenFactor } = opts;
-  const ringSegs = 16;
+  const ringSegs = 24;
   const positions = [];
   const normals = [];
   const uvs = [];
   const indices = [];
 
-  const dir = Math.sign(shoulderX); // -1 for left, +1 for right
+  const dir = Math.sign(shoulderX);
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
 
@@ -493,7 +520,6 @@ function createSleeve(doc, buffer, opts, segments) {
     const t = row / segments;
     const radius = radiusTop + (radiusBottom - radiusTop) * t;
 
-    // Position along sleeve axis
     const axisLen = t * length;
     const cx = shoulderX + dir * axisLen * cosA;
     const cy = shoulderY - axisLen * sinA;
@@ -502,23 +528,18 @@ function createSleeve(doc, buffer, opts, segments) {
       const u = col / ringSegs;
       const ringAngle = u * Math.PI * 2;
 
-      // Cross-section of sleeve (slightly flattened oval)
       let rx = Math.cos(ringAngle) * radius;
       let ry = Math.sin(ringAngle) * radius;
 
-      // Flatten slightly
       const flatBlend = Math.pow(Math.abs(Math.sin(ringAngle)), 2);
       ry *= 1 - flattenFactor * (1 - flatBlend);
 
-      // Rotate cross-section to align with sleeve direction
-      // Sleeve goes outward and down, so rotate the cross-section
       const px = cx + rx * sinA * dir;
       const py = cy + rx * cosA;
       const pz = ry;
 
       positions.push(px, py, pz);
 
-      // Normal
       const nx = Math.cos(ringAngle) * sinA * dir;
       const ny = Math.cos(ringAngle) * cosA;
       const nz = Math.sin(ringAngle);
@@ -543,35 +564,25 @@ function createSleeve(doc, buffer, opts, segments) {
   return buildMesh(doc, buffer, name, positions, normals, uvs, indices);
 }
 
-function createShortSleeve(doc, buffer, opts) {
-  return createSleeve(doc, buffer, opts, 6);
-}
-
-function createLongSleeve(doc, buffer, opts) {
-  return createSleeve(doc, buffer, opts, 10);
-}
-
 // ─── Collar ─────────────────────────────────────────────────
 
 function createCrewNeck(doc, buffer, opts) {
   const { name, radiusX, radiusZ, thickness, height, offsetY, segments } = opts;
-  const heightSegs = 3;
+  const heightSegs = 4;
   const positions = [];
   const normals = [];
   const uvs = [];
   const indices = [];
 
-  // Create a collar as a band around the neckline
   for (let row = 0; row <= heightSegs; row++) {
     const t = row / heightSegs;
     const y = offsetY + t * height;
-    const r = 1 + t * 0.05; // slight outward flare
+    const r = 1 + t * 0.04;
 
     for (let col = 0; col <= segments; col++) {
       const u = col / segments;
       const angle = u * Math.PI * 2;
 
-      // Outer ring
       const x = Math.cos(angle) * radiusX * r;
       const z = Math.sin(angle) * radiusZ * r;
 
@@ -585,7 +596,6 @@ function createCrewNeck(doc, buffer, opts) {
     }
   }
 
-  // Inner ring (creates thickness)
   for (let row = 0; row <= heightSegs; row++) {
     const t = row / heightSegs;
     const y = offsetY + t * height;
@@ -609,7 +619,6 @@ function createCrewNeck(doc, buffer, opts) {
 
   const ringVerts = segments + 1;
 
-  // Outer surface
   for (let row = 0; row < heightSegs; row++) {
     for (let col = 0; col < segments; col++) {
       const a = row * ringVerts + col;
@@ -620,7 +629,6 @@ function createCrewNeck(doc, buffer, opts) {
     }
   }
 
-  // Inner surface (reversed winding)
   const innerOffset = (heightSegs + 1) * ringVerts;
   for (let row = 0; row < heightSegs; row++) {
     for (let col = 0; col < segments; col++) {
@@ -756,7 +764,6 @@ function createHoodShape(doc, buffer, opts) {
   const uvs = [];
   const indices = [];
 
-  // Hood as a curved shell going from neck upward and backward
   for (let row = 0; row <= segments; row++) {
     const t = row / segments;
     const phi = t * Math.PI * 0.6;
@@ -769,8 +776,7 @@ function createHoodShape(doc, buffer, opts) {
       const s = col / segments;
       const x = -rowWidth + s * rowWidth * 2;
 
-      // Add some roundness to the back of the hood
-      const bulge = Math.sin(s * Math.PI) * 0.025 * Math.sin(phi);
+      const bulge = Math.sin(s * Math.PI) * 0.03 * Math.sin(phi);
 
       positions.push(x, y, zBase - bulge);
 
@@ -803,17 +809,15 @@ function createKangarooPocket(doc, buffer, opts) {
   const { name, width, height, depth, offsetY, offsetZ, cornerRadius } = opts;
   const halfW = width / 2;
   const halfH = height / 2;
-  const segs = 4; // segments per corner
+  const segs = 6;
 
   const positions = [];
   const normals = [];
   const uvs = [];
   const indices = [];
 
-  // Create rounded rectangle patch
   const outline = [];
 
-  // Bottom-left corner
   for (let i = 0; i <= segs; i++) {
     const a = Math.PI + (Math.PI / 2) * (i / segs);
     outline.push([
@@ -821,7 +825,6 @@ function createKangarooPocket(doc, buffer, opts) {
       -halfH + cornerRadius + Math.sin(a) * cornerRadius,
     ]);
   }
-  // Bottom-right corner
   for (let i = 0; i <= segs; i++) {
     const a = (3 * Math.PI / 2) + (Math.PI / 2) * (i / segs);
     outline.push([
@@ -829,7 +832,6 @@ function createKangarooPocket(doc, buffer, opts) {
       -halfH + cornerRadius + Math.sin(a) * cornerRadius,
     ]);
   }
-  // Top-right corner
   for (let i = 0; i <= segs; i++) {
     const a = 0 + (Math.PI / 2) * (i / segs);
     outline.push([
@@ -837,7 +839,6 @@ function createKangarooPocket(doc, buffer, opts) {
       halfH - cornerRadius + Math.sin(a) * cornerRadius,
     ]);
   }
-  // Top-left corner
   for (let i = 0; i <= segs; i++) {
     const a = Math.PI / 2 + (Math.PI / 2) * (i / segs);
     outline.push([
@@ -846,20 +847,17 @@ function createKangarooPocket(doc, buffer, opts) {
     ]);
   }
 
-  // Center vertex
   const baseIdx = 0;
   positions.push(0, offsetY, offsetZ + depth);
   normals.push(0, 0, 1);
   uvs.push(0.5, 0.5);
 
-  // Outline vertices
   for (const [ox, oy] of outline) {
     positions.push(ox, offsetY + oy, offsetZ + depth * (1 - Math.abs(oy / halfH) * 0.3));
     normals.push(0, 0, 1);
     uvs.push(0.5 + ox / width, 0.5 + oy / height);
   }
 
-  // Fan triangles
   const n = outline.length;
   for (let i = 0; i < n; i++) {
     indices.push(baseIdx, baseIdx + 1 + i, baseIdx + 1 + ((i + 1) % n));
@@ -899,12 +897,12 @@ function buildMesh(doc, buffer, name, posArr, normArr, uvArr, idxArr) {
 async function main() {
   const io = new NodeIO();
 
-  console.log("Generating T-shirt model...");
+  console.log("Generating T-shirt model (v2)...");
   const tshirtDoc = createTshirtDocument();
   await io.write("public/models/tshirt.glb", tshirtDoc);
   console.log("Written: public/models/tshirt.glb");
 
-  console.log("Generating Hoodie model...");
+  console.log("Generating Hoodie model (v2)...");
   const hoodieDoc = createHoodieDocument();
   await io.write("public/models/hoodie.glb", hoodieDoc);
   console.log("Written: public/models/hoodie.glb");
