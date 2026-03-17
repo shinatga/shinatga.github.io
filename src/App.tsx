@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Scene from "./components/canvas/Scene";
 import Toolbar from "./components/ui/Toolbar";
 import TextPanel from "./components/ui/TextPanel";
@@ -20,7 +20,25 @@ export default function App() {
   const elements = useDesignStore((s) => s.elements);
   const setViewSide = useUIStore((s) => s.setViewSide);
 
+  const undo = useDesignStore((s) => s.undo);
+  const redo = useDesignStore((s) => s.redo);
   const selectedEl = elements.find((el) => el.id === selectedId);
+
+  // Keyboard shortcuts: Ctrl+Z / Ctrl+Y
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [undo, redo]);
 
   const handleRendererReady = useCallback((gl: WebGLRenderer) => {
     glRef.current = gl;
