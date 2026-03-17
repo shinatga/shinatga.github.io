@@ -5,6 +5,8 @@ import TextPanel from "./components/ui/TextPanel";
 import ImagePanel from "./components/ui/ImagePanel";
 import ColorPicker from "./components/ui/ColorPicker";
 import LayerPanel from "./components/ui/LayerPanel";
+import PrintGuide from "./components/ui/PrintGuide";
+import SizeGuide from "./components/ui/SizeGuide";
 import ExportDialog from "./components/ui/ExportDialog";
 import { useDesignStore } from "./store/useDesignStore";
 import { useUIStore } from "./store/useUIStore";
@@ -101,6 +103,8 @@ export default function App() {
       <ImagePanel />
       <ColorPicker />
       <LayerPanel />
+      <PrintGuide />
+      <SizeGuide />
 
       {/* Selected Element Controls */}
       {selectedEl && (

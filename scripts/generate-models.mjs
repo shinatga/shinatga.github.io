@@ -170,6 +170,211 @@ function createHoodieDocument() {
   return doc;
 }
 
+// ─── Long Sleeve ────────────────────────────────────────────
+
+function createLongSleeveDocument() {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const scene = doc.createScene("LongSleeveScene");
+
+  const body = createGarmentBody(doc, buffer, {
+    name: "LongSleeve_Body",
+    profile: [
+      [-0.28, 0.19, 0.10],  // hem - slightly longer than tshirt
+      [-0.22, 0.185, 0.095],
+      [-0.14, 0.175, 0.09],  // waist
+      [-0.06, 0.175, 0.09],
+      [0.04,  0.18,  0.09],  // chest
+      [0.12,  0.185, 0.09],  // upper chest
+      [0.18,  0.20,  0.085], // shoulder area
+      [0.24,  0.21,  0.08],  // shoulders
+      [0.26,  0.18,  0.07],  // top shoulder slope
+    ],
+    ringSegments: 32,
+    flattenFactor: 0.6,
+  });
+
+  const leftSleeve = createSleeve(doc, buffer, {
+    name: "LeftSleeve",
+    shoulderX: -0.21,
+    shoulderY: 0.20,
+    length: 0.28,
+    radiusTop: 0.065,
+    radiusBottom: 0.05,
+    angle: 0.55,
+    flattenFactor: 0.25,
+  }, 10);
+
+  const rightSleeve = createSleeve(doc, buffer, {
+    name: "RightSleeve",
+    shoulderX: 0.21,
+    shoulderY: 0.20,
+    length: 0.28,
+    radiusTop: 0.065,
+    radiusBottom: 0.05,
+    angle: 0.55,
+    flattenFactor: 0.25,
+  }, 10);
+
+  const collar = createCrewNeck(doc, buffer, {
+    name: "Collar",
+    radiusX: 0.065,
+    radiusZ: 0.045,
+    thickness: 0.014,
+    height: 0.02,
+    offsetY: 0.265,
+    segments: 32,
+  });
+
+  const mat = doc.createMaterial("GarmentMaterial")
+    .setBaseColorFactor([0.53, 0.53, 0.53, 1.0])
+    .setMetallicFactor(0.0)
+    .setRoughnessFactor(0.85)
+    .setDoubleSided(true);
+
+  [body, leftSleeve, rightSleeve, collar].forEach(mesh =>
+    mesh.listPrimitives().forEach(p => p.setMaterial(mat))
+  );
+
+  const rootNode = doc.createNode("LongSleeve_Body").setMesh(body);
+  rootNode.addChild(doc.createNode("LeftSleeve").setMesh(leftSleeve));
+  rootNode.addChild(doc.createNode("RightSleeve").setMesh(rightSleeve));
+  rootNode.addChild(doc.createNode("Collar").setMesh(collar));
+
+  scene.addChild(rootNode);
+  return doc;
+}
+
+// ─── Tank Top ────────────────────────────────────────────────
+
+function createTankTopDocument() {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const scene = doc.createScene("TankTopScene");
+
+  const body = createGarmentBody(doc, buffer, {
+    name: "TankTop_Body",
+    // Narrower shoulders, deeper armholes, wider neck
+    profile: [
+      [-0.26, 0.18, 0.10],  // hem
+      [-0.20, 0.175, 0.095],
+      [-0.12, 0.165, 0.09],  // waist - slightly narrower
+      [-0.04, 0.165, 0.09],
+      [0.04,  0.17,  0.09],  // chest
+      [0.12,  0.17,  0.088], // upper chest
+      [0.18,  0.165, 0.082], // shoulder area - narrower (deep armhole)
+      [0.22,  0.155, 0.075], // shoulders - narrow for tank
+      [0.24,  0.13,  0.065], // top shoulder slope - narrow
+    ],
+    ringSegments: 32,
+    flattenFactor: 0.6,
+  });
+
+  // Wider neck opening for tank top
+  const collar = createCrewNeck(doc, buffer, {
+    name: "Collar",
+    radiusX: 0.085,  // wider than tshirt
+    radiusZ: 0.06,
+    thickness: 0.012,
+    height: 0.015,
+    offsetY: 0.245,  // lower because narrower shoulders
+    segments: 32,
+  });
+
+  const mat = doc.createMaterial("GarmentMaterial")
+    .setBaseColorFactor([0.53, 0.53, 0.53, 1.0])
+    .setMetallicFactor(0.0)
+    .setRoughnessFactor(0.85)
+    .setDoubleSided(true);
+
+  [body, collar].forEach(mesh =>
+    mesh.listPrimitives().forEach(p => p.setMaterial(mat))
+  );
+
+  const rootNode = doc.createNode("TankTop_Body").setMesh(body);
+  rootNode.addChild(doc.createNode("Collar").setMesh(collar));
+
+  scene.addChild(rootNode);
+  return doc;
+}
+
+// ─── Polo ────────────────────────────────────────────────────
+
+function createPoloDocument() {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const scene = doc.createScene("PoloScene");
+
+  const body = createGarmentBody(doc, buffer, {
+    name: "Polo_Body",
+    profile: [
+      [-0.26, 0.19, 0.10],  // hem
+      [-0.20, 0.185, 0.095],
+      [-0.12, 0.175, 0.09],  // waist
+      [-0.04, 0.175, 0.09],
+      [0.04,  0.18,  0.09],  // chest
+      [0.12,  0.185, 0.09],  // upper chest
+      [0.18,  0.20,  0.085], // shoulder area
+      [0.24,  0.21,  0.08],  // shoulders
+      [0.26,  0.18,  0.07],  // top shoulder slope
+    ],
+    ringSegments: 32,
+    flattenFactor: 0.6,
+  });
+
+  const leftSleeve = createShortSleeve(doc, buffer, {
+    name: "LeftSleeve",
+    shoulderX: -0.21,
+    shoulderY: 0.20,
+    length: 0.15,
+    radiusTop: 0.065,
+    radiusBottom: 0.07,
+    angle: 0.55,
+    flattenFactor: 0.3,
+  });
+
+  const rightSleeve = createShortSleeve(doc, buffer, {
+    name: "RightSleeve",
+    shoulderX: 0.21,
+    shoulderY: 0.20,
+    length: 0.15,
+    radiusTop: 0.065,
+    radiusBottom: 0.07,
+    angle: 0.55,
+    flattenFactor: 0.3,
+  });
+
+  const collar = createPoloCollar(doc, buffer, {
+    name: "Collar",
+    radiusX: 0.06,
+    radiusZ: 0.042,
+    thickness: 0.016,
+    height: 0.035,  // taller than crew neck
+    offsetY: 0.265,
+    segments: 32,
+    placketWidth: 0.022,
+    placketDepth: 0.055,
+  });
+
+  const mat = doc.createMaterial("GarmentMaterial")
+    .setBaseColorFactor([0.53, 0.53, 0.53, 1.0])
+    .setMetallicFactor(0.0)
+    .setRoughnessFactor(0.85)
+    .setDoubleSided(true);
+
+  [body, leftSleeve, rightSleeve, collar].forEach(mesh =>
+    mesh.listPrimitives().forEach(p => p.setMaterial(mat))
+  );
+
+  const rootNode = doc.createNode("Polo_Body").setMesh(body);
+  rootNode.addChild(doc.createNode("LeftSleeve").setMesh(leftSleeve));
+  rootNode.addChild(doc.createNode("RightSleeve").setMesh(rightSleeve));
+  rootNode.addChild(doc.createNode("Collar").setMesh(collar));
+
+  scene.addChild(rootNode);
+  return doc;
+}
+
 // ─── Garment Body ───────────────────────────────────────────
 
 /**
@@ -430,6 +635,117 @@ function createCrewNeck(doc, buffer, opts) {
   return buildMesh(doc, buffer, name, positions, normals, uvs, indices);
 }
 
+// ─── Polo Collar ─────────────────────────────────────────────
+
+/**
+ * Taller collar with a front placket detail (rectangular flap at center front).
+ */
+function createPoloCollar(doc, buffer, opts) {
+  const { name, radiusX, radiusZ, thickness, height, offsetY, segments, placketWidth, placketDepth } = opts;
+  const heightSegs = 4; // more segments for taller collar
+  const positions = [];
+  const normals = [];
+  const uvs = [];
+  const indices = [];
+
+  // Outer ring
+  for (let row = 0; row <= heightSegs; row++) {
+    const t = row / heightSegs;
+    const y = offsetY + t * height;
+    const r = 1 + t * 0.04; // slight outward flare
+
+    for (let col = 0; col <= segments; col++) {
+      const u = col / segments;
+      const angle = u * Math.PI * 2;
+
+      const x = Math.cos(angle) * radiusX * r;
+      const z = Math.sin(angle) * radiusZ * r;
+
+      positions.push(x, y, z);
+
+      const nx = Math.cos(angle);
+      const nz = Math.sin(angle);
+      const len = Math.sqrt(nx * nx + nz * nz) || 1;
+      normals.push(nx / len, 0, nz / len);
+      uvs.push(u, t);
+    }
+  }
+
+  // Inner ring (creates thickness)
+  for (let row = 0; row <= heightSegs; row++) {
+    const t = row / heightSegs;
+    const y = offsetY + t * height;
+
+    for (let col = 0; col <= segments; col++) {
+      const u = col / segments;
+      const angle = u * Math.PI * 2;
+
+      const x = Math.cos(angle) * (radiusX - thickness);
+      const z = Math.sin(angle) * (radiusZ - thickness);
+
+      positions.push(x, y, z);
+
+      const nx = -Math.cos(angle);
+      const nz = -Math.sin(angle);
+      const len = Math.sqrt(nx * nx + nz * nz) || 1;
+      normals.push(nx / len, 0, nz / len);
+      uvs.push(u, t);
+    }
+  }
+
+  const ringVerts = segments + 1;
+
+  // Outer surface
+  for (let row = 0; row < heightSegs; row++) {
+    for (let col = 0; col < segments; col++) {
+      const a = row * ringVerts + col;
+      const b = a + 1;
+      const c = a + ringVerts;
+      const d = c + 1;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+
+  // Inner surface (reversed winding)
+  const innerOffset = (heightSegs + 1) * ringVerts;
+  for (let row = 0; row < heightSegs; row++) {
+    for (let col = 0; col < segments; col++) {
+      const a = innerOffset + row * ringVerts + col;
+      const b = a + 1;
+      const c = a + ringVerts;
+      const d = c + 1;
+      indices.push(a, b, c, b, d, c);
+    }
+  }
+
+  // Front placket - a flat rectangular flap at center-front (z positive)
+  const placketBaseIdx = positions.length / 3;
+  const halfPW = placketWidth / 2;
+  const pTop = offsetY + height;
+  const pBot = offsetY - placketDepth;
+  const pZ = radiusZ + 0.002; // just in front of collar
+
+  // 4 corners of placket: bottom-left, bottom-right, top-right, top-left
+  const placketVerts = [
+    [-halfPW, pBot, pZ],
+    [ halfPW, pBot, pZ],
+    [ halfPW, pTop, pZ],
+    [-halfPW, pTop, pZ],
+  ];
+  for (const [px, py, pz] of placketVerts) {
+    positions.push(px, py, pz);
+    normals.push(0, 0, 1);
+    uvs.push(0.5 + px / placketWidth, (py - pBot) / (pTop - pBot));
+  }
+  // Two triangles for the placket face
+  indices.push(
+    placketBaseIdx, placketBaseIdx + 1, placketBaseIdx + 2,
+    placketBaseIdx, placketBaseIdx + 2, placketBaseIdx + 3
+  );
+
+  return buildMesh(doc, buffer, name, positions, normals, uvs, indices);
+}
+
 // ─── Hood ───────────────────────────────────────────────────
 
 function createHoodShape(doc, buffer, opts) {
@@ -592,6 +908,21 @@ async function main() {
   const hoodieDoc = createHoodieDocument();
   await io.write("public/models/hoodie.glb", hoodieDoc);
   console.log("Written: public/models/hoodie.glb");
+
+  console.log("Generating Long Sleeve model...");
+  const longSleeveDoc = createLongSleeveDocument();
+  await io.write("public/models/longsleeve.glb", longSleeveDoc);
+  console.log("Written: public/models/longsleeve.glb");
+
+  console.log("Generating Tank Top model...");
+  const tankTopDoc = createTankTopDocument();
+  await io.write("public/models/tanktop.glb", tankTopDoc);
+  console.log("Written: public/models/tanktop.glb");
+
+  console.log("Generating Polo model...");
+  const poloDoc = createPoloDocument();
+  await io.write("public/models/polo.glb", poloDoc);
+  console.log("Written: public/models/polo.glb");
 
   console.log("Done!");
 }
