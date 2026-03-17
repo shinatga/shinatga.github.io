@@ -3,6 +3,17 @@ import { Plus } from "lucide-react";
 import { useDesignStore } from "../../store/useDesignStore";
 import { useUIStore } from "../../store/useUIStore";
 
+const FONT_OPTIONS = [
+  { value: "Arial", label: "Arial" },
+  { value: "'Noto Sans KR'", label: "Noto Sans KR" },
+  { value: "'Playfair Display'", label: "Playfair Display" },
+  { value: "'Bebas Neue'", label: "Bebas Neue" },
+  { value: "'Permanent Marker'", label: "Permanent Marker" },
+  { value: "'Black Han Sans'", label: "Black Han Sans" },
+  { value: "'Oswald'", label: "Oswald" },
+  { value: "monospace", label: "Monospace" },
+];
+
 export default function TextPanel() {
   const activePanel = useUIStore((s) => s.activePanel);
   const addText = useDesignStore((s) => s.addText);
@@ -12,6 +23,7 @@ export default function TextPanel() {
   const [fontSize, setFontSize] = useState(48);
   const [color, setColor] = useState("#ffffff");
   const [fontWeight, setFontWeight] = useState<"normal" | "bold">("bold");
+  const [fontFamily, setFontFamily] = useState("Arial");
 
   if (activePanel !== "text") return null;
 
@@ -22,6 +34,7 @@ export default function TextPanel() {
       fontSize,
       color,
       fontWeight,
+      fontFamily,
       side: viewSide === "back" ? "back" : "front",
     });
     setText("");
@@ -40,6 +53,22 @@ export default function TextPanel() {
           placeholder="Enter text..."
           className="w-full px-3 py-2 rounded-md bg-[#0a0a0a] border border-[#2a2a2a] text-white text-sm placeholder-gray-500 focus:outline-none focus:border-indigo-500"
         />
+
+        {/* Font selector */}
+        <div>
+          <label className="text-xs text-gray-400 mb-1 block">Font</label>
+          <select
+            value={fontFamily}
+            onChange={(e) => setFontFamily(e.target.value)}
+            className="w-full px-3 py-1.5 rounded-md bg-[#0a0a0a] border border-[#2a2a2a] text-white text-sm focus:outline-none focus:border-indigo-500"
+          >
+            {FONT_OPTIONS.map((f) => (
+              <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="flex gap-2">
           <div className="flex-1">

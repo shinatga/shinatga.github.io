@@ -10,8 +10,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Scissors,
+  Undo2,
+  Redo2,
+  Save,
+  FolderOpen,
 } from "lucide-react";
 import { useGarmentStore } from "../../store/useGarmentStore";
+import { useDesignStore } from "../../store/useDesignStore";
 import { useUIStore } from "../../store/useUIStore";
 import { FABRIC_CATALOG } from "../../lib/fabric-textures";
 import type { FabricType } from "../../lib/fabric-textures";
@@ -53,6 +58,44 @@ export default function Toolbar({ onExport }: ToolbarProps) {
   const setViewSide = useUIStore((s) => s.setViewSide);
   const activePanel = useUIStore((s) => s.activePanel);
   const togglePanel = useUIStore((s) => s.togglePanel);
+
+  const undo = useDesignStore((s) => s.undo);
+  const redo = useDesignStore((s) => s.redo);
+  const canUndo = useDesignStore((s) => s.canUndo);
+  const canRedo = useDesignStore((s) => s.canRedo);
+  const saveToLocal = useDesignStore((s) => s.saveToLocal);
+  const loadFromLocal = useDesignStore((s) => s.loadFromLocal);
+  const saveDesign = useDesignStore((s) => s.saveDesign);
+  const loadDesign = useDesignStore((s) => s.loadDesign);
+
+  const handleSaveFile = () => {
+    const json = saveDesign();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "garment-design.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleLoadFile = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          loadDesign(reader.result);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
 
   return (
     <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
@@ -136,14 +179,65 @@ export default function Toolbar({ onExport }: ToolbarProps) {
         ))}
       </div>
 
-      {/* Export */}
-      <button
-        onClick={onExport}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-medium transition-colors"
-      >
-        <Download size={14} />
-        Export
-      </button>
+      {/* Undo/Redo + Save/Load */}
+      <div className="flex gap-1 rounded-lg bg-[#1a1a1a]/90 backdrop-blur-sm p-1 border border-[#2a2a2a]">
+        <button
+          onClick={undo}
+          disabled={!canUndo()}
+          title="Undo (Ctrl+Z)"
+          className="px-2.5 py-1.5 rounded-md text-xs transition-colors disabled:text-gray-600 text-gray-400 hover:text-white hover:bg-white/10"
+        >
+          <Undo2 size={14} />
+        </button>
+        <button
+          onClick={redo}
+          disabled={!canRedo()}
+          title="Redo (Ctrl+Y)"
+          className="px-2.5 py-1.5 rounded-md text-xs transition-colors disabled:text-gray-600 text-gray-400 hover:text-white hover:bg-white/10"
+        >
+          <Redo2 size={14} />
+        </button>
+        <div className="w-px bg-[#2a2a2a]" />
+        <button
+          onClick={saveToLocal}
+          title="Quick Save"
+          className="px-2.5 py-1.5 rounded-md text-xs text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+        >
+          <Save size={14} />
+        </button>
+        <button
+          onClick={loadFromLocal}
+          title="Quick Load"
+          className="px-2.5 py-1.5 rounded-md text-xs text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+        >
+          <FolderOpen size={14} />
+        </button>
+      </div>
+
+      {/* Export + File operations */}
+      <div className="flex gap-1">
+        <button
+          onClick={onExport}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-medium transition-colors"
+        >
+          <Download size={14} />
+          Export
+        </button>
+        <button
+          onClick={handleSaveFile}
+          title="Save as JSON"
+          className="px-3 py-2 rounded-lg bg-[#1a1a1a]/90 border border-[#2a2a2a] text-gray-400 hover:text-white text-xs transition-colors"
+        >
+          <Save size={14} />
+        </button>
+        <button
+          onClick={handleLoadFile}
+          title="Load JSON"
+          className="px-3 py-2 rounded-lg bg-[#1a1a1a]/90 border border-[#2a2a2a] text-gray-400 hover:text-white text-xs transition-colors"
+        >
+          <FolderOpen size={14} />
+        </button>
+      </div>
     </div>
   );
 }
