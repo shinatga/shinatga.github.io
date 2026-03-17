@@ -1,0 +1,111 @@
+import { useMemo, useState, useEffect } from "react";
+import { Decal } from "@react-three/drei";
+import { useDesignStore } from "../../store/useDesignStore";
+import { useGarmentStore } from "../../store/useGarmentStore";
+import { GARMENT_CONFIGS } from "../../types/garment";
+import { createTextTexture, createImageTexture } from "../../lib/texture-generator";
+import type { Mesh, CanvasTexture } from "three";
+import type { ImageElement, TextElement } from "../../types/design";
+
+interface DecalsProps {
+  mesh: Mesh | null;
+}
+
+function TextDecal({ element }: { element: TextElement }) {
+  const garmentType = useGarmentStore((s) => s.garmentType);
+  const config = GARMENT_CONFIGS[garmentType];
+  const basePos = element.side === "front" ? config.decalPositionFront : config.decalPositionBack;
+
+  const texture = useMemo(
+    () =>
+      createTextTexture({
+        text: element.text,
+        fontSize: element.fontSize,
+        fontFamily: element.fontFamily,
+        fontWeight: element.fontWeight,
+        color: element.color,
+      }),
+    [element.text, element.fontSize, element.fontFamily, element.fontWeight, element.color]
+  );
+
+  // Dispose texture on cleanup or when it changes
+  useEffect(() => {
+    return () => {
+      texture.dispose();
+    };
+  }, [texture]);
+
+  const position: [number, number, number] = [
+    basePos[0] + element.position[0],
+    basePos[1] + element.position[1],
+    basePos[2],
+  ];
+
+  return (
+    <Decal
+      position={position}
+      rotation={[0, element.side === "back" ? Math.PI : 0, element.rotation]}
+      scale={element.scale}
+      map={texture}
+      depthTest={false}
+    />
+  );
+}
+
+function ImageDecal({ element }: { element: ImageElement }) {
+  const garmentType = useGarmentStore((s) => s.garmentType);
+  const config = GARMENT_CONFIGS[garmentType];
+  const basePos = element.side === "front" ? config.decalPositionFront : config.decalPositionBack;
+  const [texture, setTexture] = useState<CanvasTexture | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    createImageTexture(element.src).then((tex) => {
+      if (!cancelled) setTexture(tex);
+    });
+    return () => {
+      cancelled = true;
+      if (texture) texture.dispose();
+    };
+    // Only re-create when src changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [element.src]);
+
+  if (!texture) return null;
+
+  const position: [number, number, number] = [
+    basePos[0] + element.position[0],
+    basePos[1] + element.position[1],
+    basePos[2],
+  ];
+
+  return (
+    <Decal
+      position={position}
+      rotation={[0, element.side === "back" ? Math.PI : 0, element.rotation]}
+      scale={element.scale}
+      map={texture}
+      depthTest={false}
+    />
+  );
+}
+
+export default function Decals({ mesh }: DecalsProps) {
+  const elements = useDesignStore((s) => s.elements);
+
+  if (!mesh) return null;
+
+  return (
+    <>
+      {elements
+        .filter((el) => el.visible)
+        .map((el) =>
+          el.type === "text" ? (
+            <TextDecal key={el.id} element={el} />
+          ) : (
+            <ImageDecal key={el.id} element={el as ImageElement} />
+          )
+        )}
+    </>
+  );
+}
