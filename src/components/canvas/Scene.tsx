@@ -5,6 +5,7 @@ import { EffectComposer, ToneMapping, SSAO, Vignette } from "@react-three/postpr
 import { ToneMappingMode } from "postprocessing";
 import GarmentModel from "./GarmentModel";
 import Decals from "./Decals";
+import DragHandler from "./DragHandler";
 import Controls from "./Controls";
 import type { Mesh, WebGLRenderer } from "three";
 
@@ -41,8 +42,10 @@ export default function Scene({ onRendererReady, postProcessingEnabled = true }:
       <directionalLight position={[0, -2, 3]} intensity={0.15} />
 
       <Suspense fallback={null}>
-        <GarmentModel onMeshReady={setMesh} />
-        <Decals mesh={mesh} />
+        <DragHandler mesh={mesh}>
+          <GarmentModel onMeshReady={setMesh} />
+          <Decals mesh={mesh} />
+        </DragHandler>
         <Environment files="/hdri/studio.hdr" />
         <ContactShadows
           position={[0, -0.5, 0]}
