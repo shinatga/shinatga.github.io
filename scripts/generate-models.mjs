@@ -59,23 +59,23 @@ function createTshirtDocument() {
     name: "LeftSleeve",
     shoulderX: -0.215,
     shoulderY: 0.20,
-    length: 0.16,
-    radiusTop: 0.068,
-    radiusBottom: 0.072,
-    angle: 0.55,
-    flattenFactor: 0.3,
-  }, 8);
+    length: 0.14,
+    radiusTop: 0.075,
+    radiusBottom: 0.065,
+    angle: 0.6,
+    flattenFactor: 0.45,
+  }, 12);
 
   const rightSleeve = createSleeve(doc, buffer, {
     name: "RightSleeve",
     shoulderX: 0.215,
     shoulderY: 0.20,
-    length: 0.16,
-    radiusTop: 0.068,
-    radiusBottom: 0.072,
-    angle: 0.55,
-    flattenFactor: 0.3,
-  }, 8);
+    length: 0.14,
+    radiusTop: 0.075,
+    radiusBottom: 0.065,
+    angle: 0.6,
+    flattenFactor: 0.45,
+  }, 12);
 
   const collar = createCrewNeck(doc, buffer, {
     name: "Collar",
@@ -506,7 +506,7 @@ function addFlatCap(positions, normals, uvs, indices, profileRow, ringSegments, 
 
 function createSleeve(doc, buffer, opts, segments) {
   const { name, shoulderX, shoulderY, length, radiusTop, radiusBottom, angle, flattenFactor } = opts;
-  const ringSegs = 24;
+  const ringSegs = 32;
   const positions = [];
   const normals = [];
   const uvs = [];
@@ -518,11 +518,15 @@ function createSleeve(doc, buffer, opts, segments) {
 
   for (let row = 0; row <= segments; row++) {
     const t = row / segments;
-    const radius = radiusTop + (radiusBottom - radiusTop) * t;
+    // Smooth eased taper for natural fabric look
+    const tEased = t * t * (3 - 2 * t); // smoothstep
+    const radius = radiusTop + (radiusBottom - radiusTop) * tEased;
 
     const axisLen = t * length;
+    // Add slight gravity droop to sleeve
+    const droop = t * t * 0.02;
     const cx = shoulderX + dir * axisLen * cosA;
-    const cy = shoulderY - axisLen * sinA;
+    const cy = shoulderY - axisLen * sinA - droop;
 
     for (let col = 0; col <= ringSegs; col++) {
       const u = col / ringSegs;
@@ -531,8 +535,13 @@ function createSleeve(doc, buffer, opts, segments) {
       let rx = Math.cos(ringAngle) * radius;
       let ry = Math.sin(ringAngle) * radius;
 
-      const flatBlend = Math.pow(Math.abs(Math.sin(ringAngle)), 2);
+      // Flatten top/bottom of sleeve for fabric feel (not round tube)
+      const flatBlend = Math.pow(Math.abs(Math.sin(ringAngle)), 1.5);
       ry *= 1 - flattenFactor * (1 - flatBlend);
+
+      // Slight oval compression front-to-back
+      const ovalFactor = 0.85 + 0.15 * Math.abs(Math.cos(ringAngle));
+      ry *= ovalFactor;
 
       const px = cx + rx * sinA * dir;
       const py = cy + rx * cosA;
