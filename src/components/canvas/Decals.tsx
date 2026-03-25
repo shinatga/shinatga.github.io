@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import type { RefObject } from "react";
 import { Decal } from "@react-three/drei";
 import { useDesignStore } from "../../store/useDesignStore";
 import { useGarmentStore } from "../../store/useGarmentStore";
@@ -9,9 +10,10 @@ import type { ImageElement, TextElement } from "../../types/design";
 
 interface DecalsProps {
   mesh: Mesh | null;
+  meshRef: RefObject<Mesh>;
 }
 
-function TextDecal({ element }: { element: TextElement }) {
+function TextDecal({ element, meshRef }: { element: TextElement; meshRef: RefObject<Mesh> }) {
   const garmentType = useGarmentStore((s) => s.garmentType);
   const config = GARMENT_CONFIGS[garmentType];
   const basePos = element.side === "front" ? config.decalPositionFront : config.decalPositionBack;
@@ -43,6 +45,7 @@ function TextDecal({ element }: { element: TextElement }) {
 
   return (
     <Decal
+      mesh={meshRef}
       position={position}
       rotation={[0, element.side === "back" ? Math.PI : 0, element.rotation]}
       scale={element.scale}
@@ -52,7 +55,7 @@ function TextDecal({ element }: { element: TextElement }) {
   );
 }
 
-function ImageDecal({ element }: { element: ImageElement }) {
+function ImageDecal({ element, meshRef }: { element: ImageElement; meshRef: RefObject<Mesh> }) {
   const garmentType = useGarmentStore((s) => s.garmentType);
   const config = GARMENT_CONFIGS[garmentType];
   const basePos = element.side === "front" ? config.decalPositionFront : config.decalPositionBack;
@@ -81,6 +84,7 @@ function ImageDecal({ element }: { element: ImageElement }) {
 
   return (
     <Decal
+      mesh={meshRef}
       position={position}
       rotation={[0, element.side === "back" ? Math.PI : 0, element.rotation]}
       scale={element.scale}
@@ -90,7 +94,7 @@ function ImageDecal({ element }: { element: ImageElement }) {
   );
 }
 
-export default function Decals({ mesh }: DecalsProps) {
+export default function Decals({ mesh, meshRef }: DecalsProps) {
   const elements = useDesignStore((s) => s.elements);
 
   if (!mesh) return null;
@@ -101,9 +105,9 @@ export default function Decals({ mesh }: DecalsProps) {
         .filter((el) => el.visible)
         .map((el) =>
           el.type === "text" ? (
-            <TextDecal key={el.id} element={el} />
+            <TextDecal key={el.id} element={el} meshRef={meshRef} />
           ) : (
-            <ImageDecal key={el.id} element={el as ImageElement} />
+            <ImageDecal key={el.id} element={el as ImageElement} meshRef={meshRef} />
           )
         )}
     </>

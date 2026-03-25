@@ -16,7 +16,13 @@ interface SceneProps {
 
 export default function Scene({ onRendererReady, postProcessingEnabled = true }: SceneProps) {
   const [mesh, setMesh] = useState<Mesh | null>(null);
+  const meshRef = useRef<Mesh>(null!);
   const rendererReported = useRef(false);
+
+  const handleMeshReady = useCallback((m: Mesh | null) => {
+    if (m) meshRef.current = m;
+    setMesh(m);
+  }, []);
 
   const handleCreated = useCallback(
     ({ gl }: { gl: WebGLRenderer }) => {
@@ -43,8 +49,8 @@ export default function Scene({ onRendererReady, postProcessingEnabled = true }:
 
       <Suspense fallback={null}>
         <DragHandler mesh={mesh}>
-          <GarmentModel onMeshReady={setMesh} />
-          <Decals mesh={mesh} />
+          <GarmentModel onMeshReady={handleMeshReady} />
+          <Decals mesh={mesh} meshRef={meshRef} />
         </DragHandler>
         <Environment files="/hdri/studio.hdr" />
         <ContactShadows
