@@ -13,6 +13,9 @@ interface GarmentModelProps {
 
 export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
   const groupRef = useRef<Group>(null);
+  const onMeshReadyRef = useRef(onMeshReady);
+  onMeshReadyRef.current = onMeshReady;
+
   const garmentType = useGarmentStore((s) => s.garmentType);
   const garmentColor = useGarmentStore((s) => s.garmentColor);
   const fabricType = useGarmentStore((s) => s.fabricType);
@@ -21,7 +24,7 @@ export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
 
   const [textures, setTextures] = useState<FabricTextureSet | null>(null);
 
-  const { scene } = useGLTF(config.modelPath);
+  const { scene } = useGLTF(config.modelPath, false, true);
   const clonedScene = useMemo(() => scene.clone(true), [scene]);
 
   // Load textures async
@@ -79,17 +82,17 @@ export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
     });
 
     const targetMesh = namedMesh ?? firstMesh;
-    onMeshReady(targetMesh);
+    onMeshReadyRef.current(targetMesh);
 
     return () => {
-      onMeshReady(null);
+      onMeshReadyRef.current(null);
       for (const mat of clonedMaterials) {
         mat.normalMap?.dispose();
         mat.roughnessMap?.dispose();
         mat.dispose();
       }
     };
-  }, [clonedScene, garmentColor, garmentType, fabricType, fabricInfo, textures, onMeshReady, config]);
+  }, [clonedScene, garmentColor, garmentType, fabricType, fabricInfo, textures, config]);
 
   return (
     <group ref={groupRef}>
@@ -97,3 +100,5 @@ export default function GarmentModel({ onMeshReady }: GarmentModelProps) {
     </group>
   );
 }
+
+useGLTF.preload("/models/tshirt.glb", false, true);

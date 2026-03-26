@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import { Decal } from "@react-three/drei";
 import { useDesignStore } from "../../store/useDesignStore";
@@ -60,18 +60,22 @@ function ImageDecal({ element, meshRef }: { element: ImageElement; meshRef: RefO
   const config = GARMENT_CONFIGS[garmentType];
   const basePos = element.side === "front" ? config.decalPositionFront : config.decalPositionBack;
   const [texture, setTexture] = useState<CanvasTexture | null>(null);
+  const textureRef = useRef<CanvasTexture | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     createImageTexture(element.src).then((tex) => {
-      if (!cancelled) setTexture(tex);
+      if (!cancelled) {
+        textureRef.current?.dispose();
+        textureRef.current = tex;
+        setTexture(tex);
+      }
     });
     return () => {
       cancelled = true;
-      if (texture) texture.dispose();
+      textureRef.current?.dispose();
+      textureRef.current = null;
     };
-    // Only re-create when src changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [element.src]);
 
   if (!texture) return null;

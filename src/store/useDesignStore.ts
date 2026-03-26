@@ -145,7 +145,20 @@ export const useDesignStore = create<DesignState>((set, get) => ({
   loadDesign: (json: string) => {
     try {
       const data = JSON.parse(json);
-      if (data.version === 1 && Array.isArray(data.elements)) {
+      const isValidElement = (el: unknown): el is DesignElement =>
+        typeof el === "object" &&
+        el !== null &&
+        "id" in el &&
+        "type" in el &&
+        ((el as DesignElement).type === "text" || (el as DesignElement).type === "image") &&
+        "position" in el &&
+        "scale" in el;
+
+      if (
+        data.version === 1 &&
+        Array.isArray(data.elements) &&
+        data.elements.every(isValidElement)
+      ) {
         set((s) => ({
           ...pushHistory(s),
           elements: data.elements,
