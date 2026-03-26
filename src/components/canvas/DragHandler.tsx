@@ -1,7 +1,6 @@
 import { useRef, useCallback } from "react";
 import { useDesignStore } from "../../store/useDesignStore";
 import { useGarmentStore } from "../../store/useGarmentStore";
-import { useUIStore } from "../../store/useUIStore";
 import { GARMENT_CONFIGS } from "../../types/garment";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Mesh } from "three";
@@ -23,8 +22,6 @@ export default function DragHandler({ mesh, children }: DragHandlerProps) {
   const updateElement = useDesignStore((s) => s.updateElement);
   const selectElement = useDesignStore((s) => s.selectElement);
   const garmentType = useGarmentStore((s) => s.garmentType);
-  const viewSide = useUIStore((s) => s.viewSide);
-
   const handlePointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       if (!selectedId || !mesh) return;
@@ -85,7 +82,7 @@ export default function DragHandler({ mesh, children }: DragHandlerProps) {
         }
       }
     },
-    [selectedId, elements, selectElement, viewSide]
+    [selectedId, elements, selectElement]
   );
 
   return (

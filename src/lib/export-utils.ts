@@ -1,5 +1,3 @@
-import jsPDF from "jspdf";
-
 export function downloadPNG(dataUrl: string, fileName = "design.png") {
   const link = document.createElement("a");
   link.href = dataUrl;
@@ -7,11 +5,12 @@ export function downloadPNG(dataUrl: string, fileName = "design.png") {
   link.click();
 }
 
-export function downloadPDF(
+export async function downloadPDF(
   frontDataUrl: string,
   backDataUrl?: string,
   fileName = "design.pdf"
 ) {
+  const { default: jsPDF } = await import("jspdf");
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const imgWidth = pageWidth - 40;

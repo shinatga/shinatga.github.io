@@ -37,8 +37,9 @@ export default function Scene({ onRendererReady, postProcessingEnabled = true }:
   return (
     <Canvas
       camera={{ position: [0, 0.2, 1.5], fov: 40 }}
-      gl={{ preserveDrawingBuffer: true, antialias: true }}
-      dpr={[1, 2]}
+      gl={{ preserveDrawingBuffer: true, antialias: true, powerPreference: "high-performance" }}
+      frameloop="demand"
+      dpr={[1, 1.5]}
       style={{ width: "100%", height: "100%" }}
       onCreated={handleCreated}
     >
@@ -58,6 +59,7 @@ export default function Scene({ onRendererReady, postProcessingEnabled = true }:
           opacity={0.4}
           scale={2}
           blur={2.5}
+          resolution={256}
         />
       </Suspense>
 
@@ -65,6 +67,8 @@ export default function Scene({ onRendererReady, postProcessingEnabled = true }:
         <EffectComposer>
           <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
           <SSAO
+            samples={16}
+            resolutionScale={0.5}
             radius={0.03}
             intensity={4}
             luminanceInfluence={0.7}

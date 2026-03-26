@@ -1,10 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import Scene from "./components/canvas/Scene";
 import Toolbar from "./components/ui/Toolbar";
-import TextPanel from "./components/ui/TextPanel";
-import ImagePanel from "./components/ui/ImagePanel";
-import ColorPicker from "./components/ui/ColorPicker";
-import LayerPanel from "./components/ui/LayerPanel";
 import PrintGuide from "./components/ui/PrintGuide";
 import SizeGuide from "./components/ui/SizeGuide";
 import ExportDialog from "./components/ui/ExportDialog";
@@ -88,28 +84,37 @@ export default function App() {
   }, [captureCurrentView, setViewSide]);
 
   return (
-    <div className="relative w-full h-full bg-[#0a0a0a]">
-      {/* 3D Canvas */}
-      <div className="w-full h-full">
+    <div className="relative w-full h-full" style={{ background: "var(--bg-primary)" }}>
+      {/* Sidebar */}
+      <Toolbar onExport={() => setExportOpen(true)} />
+
+      {/* 3D Canvas — offset by sidebar width */}
+      <div
+        className="absolute top-0 right-0 bottom-0"
+        style={{ left: "var(--sidebar-w)" }}
+      >
         <Scene
           onRendererReady={handleRendererReady}
           postProcessingEnabled={!isExporting}
         />
       </div>
 
-      {/* UI Overlays */}
-      <Toolbar onExport={() => setExportOpen(true)} />
-      <TextPanel />
-      <ImagePanel />
-      <ColorPicker />
-      <LayerPanel />
+      {/* Overlay guides (positioned relative to canvas area) */}
       <PrintGuide />
       <SizeGuide />
 
       {/* Selected Element Controls */}
       {selectedEl && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-lg bg-[#1a1a1a]/95 backdrop-blur-sm border border-[#2a2a2a] z-10">
-          <label className="text-xs text-gray-400">Scale:</label>
+        <div
+          className="absolute bottom-4 flex items-center gap-3 px-4 py-2 rounded-lg backdrop-blur-sm z-10"
+          style={{
+            left: "calc(var(--sidebar-w) + 50%)",
+            transform: "translateX(-50%)",
+            background: "rgba(22,22,22,0.95)",
+            border: "1px solid var(--border-color)",
+          }}
+        >
+          <label className="text-xs" style={{ color: "var(--text-secondary)" }}>Scale</label>
           <input
             type="range"
             min={2}
@@ -119,22 +124,23 @@ export default function App() {
               const v = Number(e.target.value) / 100;
               updateElement(selectedEl.id, { scale: [v, v, v] });
             }}
-            className="w-32 accent-indigo-500"
+            className="w-28"
           />
-          <span className="text-xs text-gray-500 w-8">
+          <span className="text-xs w-8 font-mono" style={{ color: "var(--text-muted)" }}>
             {Math.round(selectedEl.scale[0] * 100)}%
           </span>
 
-          <div className="w-px h-4 bg-[#2a2a2a]" />
+          <div className="w-px h-4" style={{ background: "var(--border-color)" }} />
 
-          <label className="text-xs text-gray-400">Side:</label>
+          <label className="text-xs" style={{ color: "var(--text-secondary)" }}>Side</label>
           <button
             onClick={() =>
               updateElement(selectedEl.id, {
                 side: selectedEl.side === "front" ? "back" : "front",
               })
             }
-            className="px-2 py-1 rounded text-xs bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30"
+            className="px-2 py-1 rounded text-xs font-medium transition-colors"
+            style={{ background: "var(--accent-dim)", color: "var(--accent-hover)" }}
           >
             {selectedEl.side}
           </button>
@@ -149,8 +155,11 @@ export default function App() {
         onExportPDF={handleExportPDF}
       />
 
-      {/* Loading overlay */}
-      <div className="absolute bottom-4 right-4 text-xs text-gray-600 z-10">
+      {/* Watermark */}
+      <div
+        className="absolute bottom-4 right-4 text-[11px] z-10"
+        style={{ color: "var(--text-muted)" }}
+      >
         3D Garment Designer
       </div>
     </div>
